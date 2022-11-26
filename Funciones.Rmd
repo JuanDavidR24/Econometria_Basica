@@ -1,0 +1,181 @@
+---
+title: "Funciones"
+output: html_notebook
+---
+
+Funcion OLS
+```{r}
+OLS.f <- function(X,Y){
+    ols <-as.matrix(solve(t(X)%*%X)%*%t(X)%*%Y)
+    return(ols)
+}
+```
+Funcion R2
+```{r}
+R2.f <- function(Y,Y_gorro){
+  sec <- (Y_gorro-mean(Y))^2
+  stc <- (Y-mean(Y))^2
+  R2<- as.numeric(sum(sec)/sum(stc));R2
+}
+```
+Función Breusch Pagan
+```{r}
+BPN <- function(X,auxiliar){
+  xaux <- X
+  gamma1 <- solve(t(X)%*%X)%*%t(X)%*%auxiliar;gamma1
+  maux1 <- X%*%gamma1
+  sec <- (maux1-mean(auxiliar))^2
+  stc <- (auxiliar-mean(auxiliar))^2
+  R2.aux1 <- sum(sec)/sum(stc);R2.aux1
+  HT <- N*R2.aux1;HT
+  glb <- as.numeric(dim(xaux)[2]-1)
+  VC <- qchisq(alpha,glb,lower.tail=FALSE);VC
+  lista <- list("HT",HT,"VC",VC)
+  return(lista)
+}
+```
+Función Test de White
+```{r}
+WhiteTest <- function(X,K,e_gorroc){
+  whitematrix <- X
+nointercept <- X[,-1]
+for (i in 1:(K-1)){
+ for (j in i:(K-1)){
+    whitematrix <- cbind(whitematrix, nointercept[,i]*nointercept[,j])
+  }
+}
+View(whitematrix)
+auxiliarwhite <- e_gorroc
+Whitebetas <- OLS.f(whitematrix,auxiliarwhite)
+whitemodel <- whitematrix%*%Whitebetas
+whiteresiduals <- auxiliarwhite-whitemodel
+whiteR2 <- R2.f(auxiliarwhite,whitemodel);whiteR2
+HTwhite <- N*whiteR2
+vcwhiteS <- qchisq(alpha,dim(whitematrix)[2]-1,lower.tail = FALSE)
+vcwhiteI <- qchisq(alpha,dim(whitematrix)[2]-1,lower.tail = TRUE)
+conclussionwhite <- rbind(vcwhiteI,HTwhite,vcwhiteS)
+print(conclussionwhite)
+}
+```
+Función Cholesky de Heteroscedasticidad para 2 clusters
+```{r}
+choleskyht.f <- function(sigmaf1,sigmaf2,NF1,N){
+  choleskyhtmatrix <- matrix(data=0,nrow=N,ncol=N)
+  for(i in 1:NF1){
+  choleskyhtmatrix[i,i] <- 1/sqrt(sigmaf1)
+ }
+  for(i in (NF1+1):N){
+  choleskyhtmatrix[i,i] <- 1/sqrt(sigmaf2)
+  }
+  return(choleskyhtmatrix)
+}
+
+```
+Función Beta Restringido
+```{r}
+b_restringido.f <- function(R_rest,B_moño,r_rest,X){
+  b_restringido <- as.matrix(B_moño +         solve(t(X)%*%X)%*%t(R_rest)%*%solve((R_rest%*%solve(t(X)%*%X)%*%t(R_rest)))%*%(r_rest-(R_rest%*%B_moño)))
+  return(b_restringido)
+}
+```
+Función Lambda 1
+```{r}
+lambda1.f <- function(R_rest, B_moño, r_rest, X, J_rest, sigma2){
+  lambda1 <- as.numeric((t(R_rest%*%B_moño-r_rest)%*%solve(R_rest%*%solve(t(X)%*%X)%*%t(R_rest))%*%(R_rest%*%B_moño-r_rest))/(J_rest*sigma2))
+  return(lambda1)
+}
+```
+Función Lambda 2
+```{r}
+lambda2.f <- function(e_gorroR, e_gorroNR, J_rest, sigma2){
+  lambda2 <- (sum(e_gorroR^2)-sum(e_gorroNR^2))/(J_rest*sigma2)
+  return(lambda2)
+}
+```
+Función Lambda 3
+```{r}
+lambda3.f <- function(B_rest, B_moño, X, J_rest, sigma2){
+  lambda3 <- (t(B_rest-B_moño)%*%t(X)%*%X%*%(B_rest-B_moño))/(J_rest*sigma2)
+  return(lambda3)
+}
+```
+Función Rho Estimado
+```{r}
+rho.f <- function(e_gorro,N){
+  rhogorro_num <- matrix(data=NA,ncol=1,nrow=N-1)
+  rhogorro_denom <- matrix(data=NA,ncol=1,nrow=N-1)
+  for(i in 2:N) {
+    rhogorro_num[i-1] <- e_gorro[i]*e_gorro[i-1]
+    rhogorro_denom[i-1] <- (e_gorro[i-1])^2
+}
+rho <- sum(rhogorro_num)/sum(rhogorro_denom)
+rho
+}
+```
+Función DW Corta
+```{r}
+DBWF.c <- function(rho, du, dl){
+  result <- 2*(1-rho)
+  
+  if (0 < result & result < dl){
+    print("Correlación positiva")
+  } else if (dl < result & result < du){
+    print("Zona de Indecisión")
+  } else if (du < result & result < (4-du)){
+    print("Zona de Rechazo")
+  } else if ((4-du) < result & result < (4-dl)){
+    print("Zona de Indecisión")
+  } else {
+    print("Correlación Negativa")
+  }
+  
+  return(result)
+}
+```
+Función Jarque Bera
+```{r}
+normTest <- function(erroresEst, Ndatos){
+ Asm <- (sum(erroresEst^3)/Ndatos)/(sum(erroresEst^2)/Ndatos)^(3/2)
+ Krt <- (sum(erroresEst^4)/Ndatos)/(sum(erroresEst^2)/Ndatos)^(4/2)
+ JB <- (N/6)*((Asm^2)+(((Krt-3)^2)/4))
+ return(JB)
+}
+```
+Función Psi de Autocorrelación
+```{r}
+psi.f <- function(rho,nrow,ncol){
+  ponderation <- matrix(data=NA, nrow=N, ncol=N)
+for (i in 1:N) {
+  for (j in 1:N) {
+    ponderation[i,j] <-rho^(abs(i-j))
+  }
+}
+head(ponderation)
+psi.n <- (1/(1-rho^2))*ponderation
+return(psi.n)
+}
+```
+Función Cholesky de Autocorrelación
+```{r}
+choleskyar.f <- function(rho,ncol,nrow){
+  Cholesky.m <- matrix(data=0, ncol=N, nrow=N);head(Cholesky.m)
+diag(Cholesky.m) <- 1
+Cholesky.m[1,1] <- sqrt(1-(rho^2));Cholesky.m[1,1]
+for (a in 1:(N-1)){
+  Cholesky.m[(a+1),a] <- -rho
+}
+return(Cholesky.m)
+}
+
+```
+Función Cuchilla de Cochrane
+```{r}
+cuchilla <- function(matrix){
+  matrix_ec <- as.matrix(matrix[-1,])
+  return(matrix_ec)
+}
+```
+
+
+
+
