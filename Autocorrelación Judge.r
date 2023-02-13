@@ -196,3 +196,15 @@ varcov_betas_20gr
 
 sd_betas_20gr <- sqrt(diag(varcov_betas_20gr))
 sd_betas_20gr
+
+### 7. PRONÓSTICO. ----
+
+## Dentro de muestra (Para obs. 17).
+Y[17,]
+X[17,]%*%B_star + rho_gr*(Y[16,]-X[16,]%*%B_star)
+X[17,]%*%B_star0 + rho_gr*(Y[16,]-X[16,]%*%B_star0)
+
+## Fuera de muestra (Para obs. 21).
+# Suponiendo X[21] = (1, 20, 20)
+c(1, 20, 20)%*%B_star + rho_gr*(Y[20,]-X[20,]%*%B_star)
+c(1, 20, 20)%*%B_star0 + rho_gr*(Y[20,]-X[20,]%*%B_star0)
