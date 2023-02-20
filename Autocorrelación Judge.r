@@ -55,6 +55,18 @@ varcov_betas_gr
 sd_betas_gr <- sqrt(diag(varcov_betas_gr))
 sd_betas_gr
 
+## Coeficiente de Determinación.
+R2.f <- function(Y, Y_gorro){
+  sec <- sum((Y_gorro-mean(Y))^2)
+  stc <- sum((Y-mean(Y))^2)
+  
+  R2 <- as.numeric(sec/stc)
+  return(R2)
+}
+
+R2 <- R2.f(Y, Y_gr)
+R2
+
 ### 4. IDENTIFICACIÓN AUTOCORRELACIÓN. ----
 
 ## Test de Durbin Watson (Método Largo).
